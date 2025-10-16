@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>prept: AI-Enhanced Weekly Meal Planner</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM CDNs -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Define custom colors using Tailwind's arbitrary values */
+        /* Primary: #64B687 (Fresh Green) */
+        /* Accent: #F4A261 (Warm Carrot Orange) */
+        /* Background: #F8F9FA (Off-White/Light Gray) */
+        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
+
+        /* Custom utility classes based on the new scheme */
+        .bg-primary { background-color: #64B687; }
+        .text-primary { color: #64B687; }
+        .hover\:bg-primary-dark:hover { background-color: #559c73; }
+        .focus\:ring-primary:focus { --tw-ring-color: #64B687; }
+
+        .bg-accent { background-color: #F4A261; }
+        .text-accent { color: #F4A261; }
+        .hover\:bg-accent-dark:hover { background-color: #e58739; }
+        .hover\:text-accent:hover { color: #F4A261; }
+        
+        .bg-app-bg { background-color: #F8F9FA; }
+        .app-shadow { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02); }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <!-- React will render the app here -->
+    </div>
+
+    <!-- The actual React code is placed inside a script block with type="text/babel" -->
+    <script type="text/babel">
+// --- FIX: ICON PLACEHOLDERS ---
+// The original module import for 'lucide-react' caused a 'require is not defined' error
+// in the Babel Standalone environment. We define the components as self-contained SVGs
+// to ensure the application runs without a module bundler.
+
+// Base component to create Lucide-style icons using simple SVG paths
+const PlaceholderIcon = ({ className, w = 24, h = 24, title = 'Icon', children, strokeWidth = "2" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <title>{title}</title>
+        {children}
+    </svg>
+);
+
+// Custom Logo Icon (Based on the uploaded image)
+const PreptLogoIcon = (props) => (
+    <PlaceholderIcon {...props} w={props.w || 32} h={props.h || 32} title="Prept Logo Check" strokeWidth="2.5">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" />
+        <path d="M9 12l2 2 4-4" stroke="currentColor" />
+    </PlaceholderIcon>
+);
+
+
+// Defined icon components using the PlaceholderIcon (using lucide paths)
+const ListChecks = (props) => <PlaceholderIcon {...props} title="List Checks"><path d="M3 7l2 2 4-4M3 14h18M3 20h18" /></PlaceholderIcon>;
+const Calendar = (props) => <PlaceholderIcon {...props} title="Calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></PlaceholderIcon>;
+const PlusCircle = (props) => <PlaceholderIcon {...props} title="Plus Circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></PlaceholderIcon>;
+const Trash2 = (props) => <PlaceholderIcon {...props} title="Trash"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></PlaceholderIcon>;
+const Loader2 = (props) => <PlaceholderIcon {...props} title="Loading"><path d="M21 12a9 9 0 1 1-6.21-8.54" className="origin-center animate-spin" /></PlaceholderIcon>;
+const Zap = (props) => <PlaceholderIcon {...props} title="Zap"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></PlaceholderIcon>;
+const Camera = (props) => <PlaceholderIcon {...props} title="Camera"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3L14.5 4z"/><circle cx="12" cy="13" r="3"/></PlaceholderIcon>;
+const X = (props) => <PlaceholderIcon {...props} title="X"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></PlaceholderIcon>;
+const Check = (props) => <PlaceholderIcon {...props} title="Check"><polyline points="20 6 9 17 4 12"/></PlaceholderIcon>;
+const Search = (props) => <PlaceholderIcon {...props} title="Search"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></PlaceholderIcon>;
+const AlertTriangle = (props) => <PlaceholderIcon {...props} title="Alert Triangle"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h18.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></PlaceholderIcon>;
+const PenTool = (props) => <PlaceholderIcon {...props} title="Pen Tool"><path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-4-4"/></PlaceholderIcon>;
+
+// --- START OF APP LOGIC ---
+
+const { useState, useEffect, useCallback, useMemo } = React;
+
+// --- CONFIGURATION & CONSTANTS ---
+
+const LOCAL_STORAGE_KEYS = {
+    RECIPES: 'prept_recipes_v2', // Updated key for potential migration needs
+    WEEKLY_PLAN: 'prept_weekly_plan_v2',
+};
+
+// IMPORTANT: This API key is intended to be provided by the Canvas runtime.
+const API_KEY = "AIzaSyDFlGz6KBhcIlnxK7Lvy3veLZM677IC420"; 
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=' + API_KEY;
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const MEALS = ['Breakfast', 'Lunch', 'Dinner'];
+
+// JSON Schema for structured recipe output from Gemini (US 5.1)
+const RECIPE_JSON_SCHEMA = {
+    type: "OBJECT",
+    properties: {
+        recipeName: { type: "STRING", description: "A creative and descriptive name for the recipe." },
+        servings: { type: "STRING", description: "The number of servings or yield of the recipe." },
+        prepTime: { type: "STRING", description: "Total time required (e.g., '30 minutes')." },
+        instructions: { type: "STRING", description: "Step-by-step preparation guide. Use double newlines (\\n\\n) to separate steps/paragraphs." },
+        ingredients: {
+            type: "ARRAY",
+            description: "A list of all ingredients required.",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    name: { type: "STRING", description: "Name of the ingredient (e.g., Chicken Breast, Olive Oil)." },
+                    quantity: { type: "STRING", description: "Quantity including units (e.g., 2 large, 1 cup, 500g)." }
+                },
+                propertyOrdering: ["name", "quantity"]
+            }
+        }
+    },
+    required: ["recipeName", "servings", "prepTime", "instructions", "ingredients"],
+    propertyOrdering: ["recipeName", "servings", "prepTime", "ingredients", "instructions"]
+};
+
+// --- UTILITIES ---
+
+/**
+ * Fallback UUID generator for environments lacking crypto.randomUUID(). (FIX for Uncaught TypeError)
+ */
+const generateUniqueId = () => {
+    // Check for native support first
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // Fallback using Math.random
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
+
+/**
+ * Utility to retry fetch operations with exponential backoff.
+ */
+const withRetry = async (fn, retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (i === retries - 1) {
+                console.error("API call failed after all retries:", error);
+                throw new Error("Gemini API call failed.");
+            }
+            const delay = Math.pow(2, i) * 1000;
+            console.warn(`Attempt ${i + 1} failed, retrying in ${delay / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+};
+
+/**
+ * Converts a File object to a Base64 string for the Gemini API.
+ */
+const base64EncodeImage = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+};
+
+/**
+ * Custom hook to manage state persistence in LocalStorage (US 1.2).
+ */
+const useLocalStorageState = (key, defaultValue) => {
+    const [state, setState] = useState(() => {
+        try {
+            const storedValue = localStorage.getItem(key);
+            if (storedValue) {
+                return JSON.parse(storedValue);
+            }
+        } catch (error) {
+            console.error(`Error reading LocalStorage key "${key}":`, error);
+        }
+        // Handle initial plan generation default (US 1.2)
+        if (key === LOCAL_STORAGE_KEYS.WEEKLY_PLAN && typeof defaultValue === 'function') {
+            return defaultValue();
+        }
+        return defaultValue;
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(key, JSON.stringify(state));
+        } catch (error) {
+            console.error(`Error writing to LocalStorage key "${key}":`, error);
+        }
+    }, [key, state]);
+
+    return [state, setState];
+};
+
+/**
+ * Component for the Prept Meal Planner (App).
+ */
+const App = () => {
+    // Phase 1: Local Storage Initialization
+    const [recipes, setRecipes] = useLocalStorageState(LOCAL_STORAGE_KEYS.RECIPES, []);
+
+    const initialPlanGenerator = useCallback(() => {
+        const initialPlan = {};
+        DAYS.forEach(day => {
+            initialPlan[day.toLowerCase()] = MEALS.reduce((acc, meal) => {
+                acc[meal.toLowerCase()] = null;
+                return acc;
+            }, {});
+        });
+        return initialPlan;
+    }, []);
+    
+    // Helper to get a clean initial plan object
+    const getInitialPlan = initialPlanGenerator;
+
+    const [weeklyPlan, setWeeklyPlan] = useLocalStorageState(LOCAL_STORAGE_KEYS.WEEKLY_PLAN, initialPlanGenerator);
+
+    const [activeView, setActiveView] = useState('plan'); // 'plan', 'recipes', 'list'
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editRecipe, setEditRecipe] = useState(null); // Used for editing existing recipes
+    const [isLoading, setIsLoading] = useState(false);
+    const [systemMessage, setSystemMessage] = useState({ type: '', text: '' }); // 'success', 'error', 'info'
+
+    // --- Data Management Functions (Phase 2 & 3 Logic) ---
+
+    // US 2.2: Add Recipe
+    const addRecipe = useCallback((newRecipe) => {
+        const recipeWithId = {
+            ...newRecipe,
+            id: generateUniqueId(), // FIX: Use fallback utility
+        };
+        setRecipes(prev => [...prev, recipeWithId]);
+        setSystemMessage({ type: 'success', text: `Recipe '${newRecipe.name}' added!` });
+        return true;
+    }, [setRecipes]);
+
+    // US 2.3: Update Recipe
+    const updateRecipe = useCallback((updatedRecipe) => {
+        setRecipes(prev => prev.map(r => (r.id === updatedRecipe.id ? updatedRecipe : r)));
+        setSystemMessage({ type: 'success', text: `Recipe '${updatedRecipe.name}' updated!` });
+    }, [setRecipes]);
+
+    // US 2.4: Delete Recipe
+    const deleteRecipe = useCallback((recipeId) => {
+        // 1. Clear references in weekly plan
+        const newPlan = { ...weeklyPlan };
+        let planUpdated = false;
+
+        Object.keys(newPlan).forEach(dayKey => {
+            Object.keys(newPlan[dayKey]).forEach(mealKey => {
+                if (newPlan[dayKey][mealKey] === recipeId) {
+                    newPlan[dayKey][mealKey] = null;
+                    planUpdated = true;
+                }
+            });
+        });
+
+        if (planUpdated) {
+            setWeeklyPlan(newPlan);
+        }
+
+        // 2. Remove from recipes list
+        setRecipes(prev => prev.filter(r => r.id !== recipeId));
+        setSystemMessage({ type: 'success', text: 'Recipe deleted successfully and removed from plan.' });
+    }, [setRecipes, setWeeklyPlan, weeklyPlan]);
+
+    // US 3.2: Update Meal Slot
+    const updateMealSlot = useCallback((day, meal, recipeId) => {
+        const lowerDay = day.toLowerCase();
+        const lowerMeal = meal.toLowerCase();
+
+        setWeeklyPlan(prev => ({
+            ...prev,
+            [lowerDay]: {
+                ...(prev[lowerDay] || {}),
+                [lowerMeal]: recipeId
+            }
+        }));
+    }, [setWeeklyPlan]);
+
+    // NEW FUNCTION: Clear all meal slots
+    const clearAllMealSlots = useCallback(() => {
+        if (confirm("Are you sure you want to clear ALL meals from your weekly plan? This action cannot be undone.")) {
+            setWeeklyPlan(getInitialPlan());
+            setSystemMessage({ type: 'success', text: 'Weekly meal plan cleared!' });
+        }
+    }, [setWeeklyPlan, getInitialPlan]);
+
+
+    // --- Shopping List Aggregation (Phase 4 Logic) ---
+
+    // US 4.1: Aggregation Logic
+    const aggregateShoppingList = useMemo(() => {
+        const ingredientsMap = {}; // { 'chicken breast': ['2 large', '1 lb'], 'salt': ['1 tsp'] }
+
+        Object.keys(weeklyPlan).forEach(dayKey => {
+            Object.keys(weeklyPlan[dayKey]).forEach(mealKey => {
+                const recipeId = weeklyPlan[dayKey][mealKey];
+                if (recipeId) {
+                    const recipe = recipes.find(r => r.id === recipeId);
+                    if (recipe && recipe.ingredients) {
+                        recipe.ingredients.forEach(item => {
+                            const nameKey = item.name.toLowerCase().trim();
+                            if (!ingredientsMap[nameKey]) {
+                                ingredientsMap[nameKey] = new Set();
+                            }
+                            // Store unique quantity strings for display
+                            ingredientsMap[nameKey].add(item.quantity.trim());
+                        });
+                    }
+                }
+            });
+        });
+
+        // Convert the map to a display array, sorted alphabetically
+        return Object.keys(ingredientsMap)
+            .sort()
+            .map(nameKey => ({
+                name: nameKey.charAt(0).toUpperCase() + nameKey.slice(1), // Capitalize first letter
+                quantities: Array.from(ingredientsMap[nameKey]).join(', ')
+            }));
+    }, [weeklyPlan, recipes]);
+
+    // --- AI Generation Logic (Phase 5 Logic) ---
+
+    const handleAIGeneration = useCallback(async (payload, mode) => {
+        setIsLoading(true);
+        setSystemMessage({ type: 'info', text: `Generating recipe from ${mode}...` });
+        
+        // Check if API key is present for AI functionality
+        if (!API_KEY) {
+            setIsLoading(false);
+            setSystemMessage({ type: 'error', text: "API Key is missing. AI generation is disabled." });
+            console.error("Gemini API Key is not set.");
+            return;
+        }
+
+        try {
+            const systemPrompt = "Act as a professional chef and recipe developer. Generate a complete recipe following the provided JSON schema. Ensure ingredients are detailed with both name and quantity/unit. Do not include any text outside the JSON object.";
+            const apiPayload = {
+                contents: payload,
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: RECIPE_JSON_SCHEMA
+                },
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            const response = await withRetry(() => fetch(GEMINI_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(apiPayload)
+            }));
+
+            if (!response.ok) {
+                const errorBody = await response.json();
+                throw new Error(errorBody.error?.message || `HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!jsonText) {
+                throw new Error("Received no structured JSON content from the API.");
+            }
+
+            const parsedRecipe = JSON.parse(jsonText);
+
+            // US 5.6: Switch to Manual Entry form and pre-fill
+            setEditRecipe({
+                id: null, // New recipe marker
+                name: parsedRecipe.recipeName || '',
+                description: '', // AI doesn't typically provide this field, so keep it empty
+                servings: parsedRecipe.servings || '',
+                prepTime: parsedRecipe.prepTime || '',
+                instructions: parsedRecipe.instructions || '',
+                ingredients: parsedRecipe.ingredients || [],
+            });
+            setIsAddModalOpen(true);
+            setSystemMessage({ type: 'success', text: `Recipe generated from ${mode}. Please review before saving.` });
+
+        } catch (e) {
+            console.error(e);
+            setSystemMessage({ type: 'error', text: e.message || `Failed to generate recipe from ${mode}. Please try again.` });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [setEditRecipe]);
+
+    // US 5.3: Handle AI Text Submit
+    const handleAITextSubmit = useCallback(async (prompt) => {
+        const payload = [{ role: "user", parts: [{ text: `Generate a recipe for: ${prompt}` }] }];
+        await handleAIGeneration(payload, 'text prompt');
+    }, [handleAIGeneration]);
+
+    // US 5.5: Handle AI Image Upload (OCR)
+    const handleAIImageUpload = useCallback(async (file) => {
+        try {
+            const base64Data = await base64EncodeImage(file);
+            const payload = [{
+                role: "user",
+                parts: [
+                    { text: "Extract the complete recipe (name, servings, time, ingredients, and instructions) from this image. Structure the output as a single JSON object." },
+                    { inlineData: { mimeType: file.type, data: base64Data } }
+                ]
+            }];
+            await handleAIGeneration(payload, 'image (OCR)');
+        } catch (e) {
+            setSystemMessage({ type: 'error', text: "Error processing image file." });
+        }
+    }, [handleAIGeneration]);
+
+    // --- UI Component Helpers ---
+
+    const openAddModal = () => {
+        setEditRecipe(null); // Ensure we start with a blank slate for new recipe
+        setIsAddModalOpen(true);
+    };
+
+    const openEditModal = (recipe) => {
+        setEditRecipe(recipe);
+        setIsAddModalOpen(true);
+    };
+
+    const closeAddModal = () => {
+        setIsAddModalOpen(false);
+        setEditRecipe(null);
+        setSystemMessage({ type: '', text: '' });
+    };
+
+    const iconClasses = "w-6 h-6 mr-3 text-primary";
+
+    // --- SUB-COMPONENTS START HERE ---
+
+    // Generic Modal Component
+    const Modal = ({ isOpen, onClose, title, children, large = false }) => {
+        if (!isOpen) return null;
+        return (
+            <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-75 transition-opacity duration-300 flex items-center justify-center p-4" onClick={onClose}>
+                <div
+                    className={`bg-white rounded-xl shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto ${large ? 'w-full max-w-4xl' : 'w-full max-w-lg'}`}
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10 flex justify-between items-center">
+                        <h3 className="text-2xl font-extrabold text-gray-800">{title}</h3>
+                        <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition">
+                            <X className="w-6 h-6 text-gray-500" />
+                        </button>
+                    </div>
+                    <div className="p-6">
+                        {children}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // US 2.2 / US 5.6: Add/Edit/AI Recipe Modal
+    const AddRecipeModal = ({ isOpen, onClose, initialRecipe }) => {
+        const [mode, setMode] = useState(initialRecipe ? 'manual' : 'ai_text'); // 'manual', 'ai_text', 'ai_image'
+        const [formData, setFormData] = useState(initialRecipe || {
+            id: null, name: '', description: '', servings: '', prepTime: '', instructions: '', ingredients: [],
+        });
+        const [aiPrompt, setAiPrompt] = useState('');
+        const [imageFile, setImageFile] = useState(null);
+        const [showError, setShowError] = useState(false);
+
+        useEffect(() => {
+            // Update form data when initialRecipe changes (e.g., pre-filled by AI)
+            if (initialRecipe) {
+                // Map the structured AI output keys to the internal state keys
+                setFormData({
+                    id: initialRecipe.id,
+                    name: initialRecipe.name,
+                    description: initialRecipe.description,
+                    servings: initialRecipe.servings,
+                    prepTime: initialRecipe.prepTime,
+                    instructions: initialRecipe.instructions,
+                    ingredients: initialRecipe.ingredients.map(ing => ({
+                        name: ing.name || '',
+                        quantity: ing.quantity || '',
+                        id: generateUniqueId(), // FIX: Use fallback utility
+                    })),
+                });
+                setMode('manual'); // Force manual review mode after AI pre-fill
+            } else {
+                // If opening for new manual entry, reset
+                setFormData({ id: null, name: '', description: '', servings: '', prepTime: '', instructions: '', ingredients: [{ name: '', quantity: '', id: generateUniqueId() }] }); // FIX: Use fallback utility
+                setMode('manual');
+            }
+        }, [initialRecipe]);
+
+        const handleChange = (e) => {
+            const { name, value } = e.target;
+            setFormData(prev => ({ ...prev, [name]: value }));
+        };
+
+        const handleIngredientChange = (id, field, value) => {
+            setFormData(prev => ({
+                ...prev,
+                ingredients: prev.ingredients.map(ing =>
+                    ing.id === id ? { ...ing, [field]: value } : ing
+                ),
+            }));
+        };
+
+        const addIngredient = () => {
+            setFormData(prev => ({
+                ...prev,
+                ingredients: [...prev.ingredients, { name: '', quantity: '', id: generateUniqueId() }], // FIX: Use fallback utility
+            }));
+        };
+
+        const removeIngredient = (id) => {
+            setFormData(prev => ({
+                ...prev,
+                ingredients: prev.ingredients.filter(ing => ing.id !== id),
+            }));
+        };
+
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            // Simple validation
+            if (!formData.name || !formData.instructions || formData.ingredients.every(i => !i.name)) {
+                setShowError(true);
+                return;
+            }
+            setShowError(false);
+
+            // Clean ingredients (remove empty ones and temp IDs)
+            const finalRecipe = {
+                ...formData,
+                ingredients: formData.ingredients
+                    .filter(i => i.name.trim() !== '' && i.quantity.trim() !== '')
+                    .map(({ id, ...rest }) => rest), // Destructure to remove temp ID
+            };
+
+            if (finalRecipe.id) {
+                updateRecipe(finalRecipe); // US 2.3
+            } else {
+                addRecipe(finalRecipe); // US 2.2
+            }
+            onClose();
+        };
+
+        // --- Tabs UI (US 5.2, US 5.4) ---
+        const TabButton = ({ currentMode, label, icon, onClick }) => (
+            <button
+                className={`py-2 px-4 rounded-t-lg transition-colors flex items-center ${currentMode === mode
+                    ? 'bg-white text-primary font-bold border-b-2 border-primary'
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                    }`}
+                onClick={() => setMode(currentMode) || onClick && onClick()}
+                disabled={isLoading}
+            >
+                {icon} <span className="ml-2">{label}</span>
+            </button>
+        );
+
+        const aiTextTab = (
+            <div className="space-y-4">
+                <textarea
+                    className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition"
+                    placeholder="E.g., A quick, low-carb chicken and broccoli stir-fry for 2, ready in 15 minutes."
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    disabled={isLoading}
+                ></textarea>
+                <button
+                    className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition flex items-center justify-center disabled:opacity-50"
+                    onClick={() => handleAITextSubmit(aiPrompt)} // US 5.3
+                    disabled={!aiPrompt.trim() || isLoading}
+                >
+                    {isLoading ? <Loader2 className="w-5 h-5 mr-2" /> : <Zap className="w-5 h-5 mr-2" />}
+                    Generate Recipe
+                </button>
+                {!API_KEY && <p className="text-red-500 text-sm mt-2">AI features require an API key to be set.</p>}
+            </div>
+        );
+
+        const aiImageTab = (
+            <div className="space-y-4">
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files[0])}
+                    className="w-full p-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                    disabled={isLoading}
+                />
+                {imageFile && (
+                    <div className="p-3 border border-gray-200 rounded-lg">
+                        <h4 className="font-semibold mb-2">Image Preview:</h4>
+                        <img src={URL.createObjectURL(imageFile)} alt="Recipe source" className="max-w-full max-h-48 rounded-lg object-contain mx-auto" />
+                    </div>
+                )}
+                <button
+                    className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition flex items-center justify-center disabled:opacity-50"
+                    onClick={() => handleAIImageUpload(imageFile)} // US 5.5
+                    disabled={!imageFile || isLoading}
+                >
+                    {isLoading ? <Loader2 className="w-5 h-5 mr-2" /> : <Camera className="w-5 h-5 mr-2" />}
+                    Process Image (OCR)
+                </button>
+                {!API_KEY && <p className="text-red-500 text-sm mt-2">AI features require an API key to be set.</p>}
+            </div>
+        );
+
+        const manualTab = (
+            <form onSubmit={handleSubmit} className="space-y-6">
+                {showError && (
+                    <div className="p-3 bg-red-100 text-red-700 rounded-lg flex items-center">
+                        <AlertTriangle className="w-5 h-5 mr-2" />
+                        Please fill out the Recipe Name, Instructions, and at least one Ingredient.
+                    </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="block">
+                        <span className="text-gray-700 font-medium">Recipe Name*</span>
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2"
+                        />
+                    </label>
+                    <label className="block">
+                        <span className="text-gray-700 font-medium">Servings</span>
+                        <input
+                            type="text"
+                            name="servings"
+                            value={formData.servings}
+                            onChange={handleChange}
+                            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2"
+                        />
+                    </label>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="block">
+                        <span className="text-gray-700 font-medium">Prep Time</span>
+                        <input
+                            type="text"
+                            name="prepTime"
+                            value={formData.prepTime}
+                            onChange={handleChange}
+                            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2"
+                        />
+                    </label>
+                    <label className="block">
+                        <span className="text-gray-700 font-medium">Description</span>
+                        <input
+                            type="text"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2"
+                        />
+                    </label>
+                </div>
+
+                <h4 className="text-lg font-bold text-gray-800 border-b pb-1">Ingredients*</h4>
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                    {formData.ingredients.map((ing) => (
+                        <div key={ing.id} className="flex space-x-2 items-center">
+                            <input
+                                type="text"
+                                value={ing.name}
+                                onChange={(e) => handleIngredientChange(ing.id, 'name', e.target.value)}
+                                placeholder="Name (e.g., Diced Onion)"
+                                className="flex-1 rounded-lg border-gray-300 shadow-sm p-2 focus:border-primary focus:ring-primary"
+                            />
+                            <input
+                                type="text"
+                                value={ing.quantity}
+                                onChange={(e) => handleIngredientChange(ing.id, 'quantity', e.target.value)}
+                                placeholder="Quantity (e.g., 1 medium)"
+                                className="w-1/3 rounded-lg border-gray-300 shadow-sm p-2 focus:border-primary focus:ring-primary"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => removeIngredient(ing.id)}
+                                className="p-2 text-accent hover:bg-accent/10 rounded-full transition"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                <button type="button" onClick={addIngredient} className="text-sm text-primary hover:text-primary-dark font-medium flex items-center mt-3">
+                    <PlusCircle className="w-4 h-4 mr-1" /> Add Ingredient
+                </button>
+
+                <label className="block">
+                    <h4 className="text-lg font-bold text-gray-800 border-b pb-1 mt-4">Instructions*</h4>
+                    <textarea
+                        name="instructions"
+                        value={formData.instructions}
+                        onChange={handleChange}
+                        rows="5"
+                        placeholder="Step-by-step cooking guide..."
+                        className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2"
+                    ></textarea>
+                </label>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
+                    <button type="button" onClick={onClose} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" className="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition disabled:opacity-50" disabled={isLoading}>
+                        {formData.id ? 'Save Changes' : 'Save New Recipe'}
+                    </button>
+                </div>
+            </form>
+        );
+
+        return (
+            <Modal isOpen={isOpen} onClose={onClose} title={initialRecipe?.id ? 'Edit Recipe' : 'Add New Recipe'} large={true}>
+                <div className="flex space-x-2 border-b mb-6">
+                    <TabButton currentMode="manual" label="Manual Entry" icon={<PenTool className="w-4 h-4" />} />
+                    <TabButton currentMode="ai_text" label="AI Text Generator" icon={<Zap className="w-4 h-4" />} />
+                    <TabButton currentMode="ai_image" label="Image OCR" icon={<Camera className="w-4 h-4" />} />
+                </div>
+
+                {/* System Message Display (Only shows up during AI process) */}
+                {systemMessage.text && (
+                    <div className={`p-3 mb-4 rounded-lg flex items-center ${systemMessage.type === 'error' ? 'bg-accent/10 text-accent' : systemMessage.type === 'success' ? 'bg-primary/10 text-primary' : 'bg-gray-200 text-gray-700'}`}>
+                        {isLoading ? <Loader2 className="w-5 h-5 mr-2" /> : (systemMessage.type === 'error' ? <AlertTriangle className="w-5 h-5 mr-2" /> : <Check className="w-5 h-5 mr-2" />)}
+                        {systemMessage.text}
+                    </div>
+                )}
+
+                {/* Content based on Mode */}
+                {mode === 'manual' && manualTab}
+                {mode === 'ai_text' && aiTextTab}
+                {mode === 'ai_image' && aiImageTab}
+            </Modal>
+        );
+    };
+
+    // US 3.1: Weekly Plan View
+    const WeeklyPlanView = () => {
+        const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+        const [selectedSlot, setSelectedSlot] = useState({ day: null, meal: null });
+
+        const openSelector = (day, meal) => {
+            setSelectedSlot({ day, meal });
+            setIsSelectorOpen(true);
+        };
+
+        const handleSlotUpdate = (recipeId) => {
+            if (selectedSlot.day && selectedSlot.meal) {
+                updateMealSlot(selectedSlot.day, selectedSlot.meal, recipeId); // US 3.2
+                setIsSelectorOpen(false);
+            }
+        };
+
+        const RecipeSelectorModal = () => {
+            const [searchTerm, setSearchTerm] = useState('');
+            const filteredRecipes = recipes.filter(r =>
+                r.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return (
+                <Modal isOpen={isSelectorOpen} onClose={() => setIsSelectorOpen(false)} title={`Select Meal for ${selectedSlot.day} ${selectedSlot.meal}`}>
+                    <input
+                        type="text"
+                        placeholder="Search recipes..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-lg mb-4 focus:ring-primary focus:border-primary"
+                    />
+
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                        {/* US 3.3: Clear Slot */}
+                        <button
+                            onClick={() => handleSlotUpdate(null)}
+                            className="w-full text-center py-3 bg-accent/10 text-accent font-bold rounded-lg hover:bg-accent/20 transition flex items-center justify-center"
+                        >
+                            <Trash2 className="w-5 h-5 mr-2" /> Clear Meal Slot
+                        </button>
+                        <hr className="my-2" />
+                        {filteredRecipes.length > 0 ? (
+                            filteredRecipes.map(recipe => (
+                                <button
+                                    key={recipe.id}
+                                    onClick={() => handleSlotUpdate(recipe.id)}
+                                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-primary/10 transition"
+                                >
+                                    <p className="font-semibold text-primary leading-tight">{recipe.name}</p>
+                                    <p className="text-sm text-gray-500">Servings: {recipe.servings || 'N/A'}</p>
+                                </button>
+                            ))
+                        ) : (
+                            <p className="text-center text-gray-500 p-4">No recipes found. Try adding one!</p>
+                        )}
+                    </div>
+                </Modal>
+            );
+        };
+
+        return (
+            <div className="p-4 md:p-8">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-extrabold text-gray-900">Weekly Meal Plan</h2>
+                    {/* NEW: Clear All Meals Button */}
+                    <button
+                        onClick={clearAllMealSlots}
+                        className="flex items-center text-sm font-semibold text-accent hover:bg-accent/10 transition p-2 rounded-lg"
+                        disabled={Object.values(weeklyPlan).every(day => Object.values(day).every(meal => meal === null))}
+                    >
+                        <Trash2 className="w-5 h-5 mr-1" /> Clear All Meals
+                    </button>
+                </div>
+                
+                <div className="overflow-x-auto app-shadow rounded-xl">
+                    <div className="grid grid-cols-8 min-w-full lg:min-w-0 bg-white rounded-xl">
+                        {/* Header Row */}
+                        <div className="p-3 border-r border-b border-gray-200 bg-gray-100 font-bold text-gray-700 text-sm md:text-base rounded-tl-xl">Meal</div>
+                        {DAYS.map((day, index) => (
+                            <div key={day} className={`p-3 border-r border-b border-gray-200 bg-gray-100 font-bold text-gray-700 text-sm md:text-base text-center ${index === DAYS.length - 1 ? 'rounded-tr-xl border-r-0' : ''}`}>
+                                {day}
+                            </div>
+                        ))}
+
+                        {/* Meal Rows */}
+                        {MEALS.map((meal, mealIndex) => (
+                            <React.Fragment key={meal}>
+                                <div className={`p-3 font-bold text-gray-700 bg-gray-100 border-r border-b border-gray-200 text-sm md:text-base ${mealIndex === MEALS.length - 1 ? 'rounded-bl-xl border-b-0' : ''}`}>{meal}</div>
+                                {DAYS.map((day, dayIndex) => {
+                                    const dayKey = day.toLowerCase();
+                                    const mealKey = meal.toLowerCase();
+                                    const recipeId = weeklyPlan[dayKey]?.[mealKey];
+                                    const recipe = recipes.find(r => r.id === recipeId);
+
+                                    const isLastRow = mealIndex === MEALS.length - 1;
+                                    const isLastCol = dayIndex === DAYS.length - 1;
+                                    
+                                    return (
+                                        <div
+                                            key={`${day}-${meal}`}
+                                            className={`p-3 border-r border-b border-gray-200 cursor-pointer transition min-h-[80px] ${recipe ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-gray-50'} 
+                                                ${isLastRow ? 'border-b-0' : ''} 
+                                                ${isLastCol ? 'border-r-0' : ''}`}
+                                            onClick={() => openSelector(day, meal)}
+                                        >
+                                            {recipe ? (
+                                                <p className="text-sm font-semibold text-primary leading-tight">{recipe.name}</p>
+                                            ) : (
+                                                <p className="text-xs text-gray-400 italic">Tap to plan...</p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </React.Fragment>
+                        ))}
+                    </div>
+                </div>
+                <RecipeSelectorModal />
+            </div>
+        );
+    };
+
+    // US 2.1: Recipe Book View
+    const RecipeBookView = () => {
+        const [searchTerm, setSearchTerm] = useState('');
+
+        const filteredRecipes = recipes.filter(r =>
+            r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.ingredients.some(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+
+        const RecipeCard = ({ recipe }) => (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-5 flex flex-col hover:shadow-xl transition duration-300">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{recipe.name}</h3>
+                <p className="text-sm text-gray-500 mb-3 line-clamp-2">{recipe.description || 'No description provided.'}</p>
+
+                <div className="flex justify-between text-sm text-gray-600 mb-4 border-t border-b py-2">
+                    <p>Serves: <span className="font-semibold">{recipe.servings || 'N/A'}</span></p>
+                    <p>Time: <span className="font-semibold">{recipe.prepTime || 'N/A'}</span></p>
+                </div>
+
+                <div className="mt-auto flex space-x-2">
+                    <button
+                        onClick={() => openEditModal(recipe)}
+                        className="flex-1 py-2 px-3 bg-primary/10 text-primary text-sm font-medium rounded-lg hover:bg-primary/20 transition"
+                    >
+                        Details / Edit
+                    </button>
+                    <button
+                        onClick={() => {
+                            // Using a custom modal is preferred over window.confirm, but for quick local setup, this is included.
+                            if (confirm(`Are you sure you want to delete "${recipe.name}"? This will remove it from your weekly plan.`)) {
+                                deleteRecipe(recipe.id);
+                            }
+                        }}
+                        className="p-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition"
+                    >
+                        <Trash2 className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+        );
+
+        return (
+            <div className="p-4 md:p-8">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-extrabold text-gray-900">Your Recipe Book</h2>
+                    <button
+                        onClick={openAddModal}
+                        className="py-2 px-4 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition flex items-center shadow-lg"
+                    >
+                        <PlusCircle className="w-5 h-5 mr-2" /> Add Recipe
+                    </button>
+                </div>
+
+                <div className="mb-6 relative">
+                    <input
+                        type="text"
+                        placeholder="Search by recipe name or ingredient..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full p-3 pl-10 border border-gray-300 rounded-xl shadow-inner focus:ring-primary focus:border-primary"
+                    />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                </div>
+
+                {filteredRecipes.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredRecipes.map(recipe => (
+                            <RecipeCard key={recipe.id} recipe={recipe} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-xl bg-white app-shadow">
+                        <PreptLogoIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-lg font-medium text-gray-600">No recipes found.</p>
+                        <p className="text-gray-500">Start by adding one manually or generating one with the AI!</p>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // US 4.1, 4.2: Shopping List View
+    const ShoppingListView = () => {
+        const [checkedItems, setCheckedItems] = useState(() => {
+            // Initialize from LocalStorage for persistence within the session
+            try {
+                const storedChecks = localStorage.getItem('prept_shopping_checks_v2');
+                return storedChecks ? JSON.parse(storedChecks) : {};
+            } catch {
+                return {};
+            }
+        });
+
+        // US 4.1: Aggregated List (Memoized for performance)
+        const shoppingList = aggregateShoppingList;
+
+        // Persist check state to LocalStorage (US 4.2)
+        useEffect(() => {
+            localStorage.setItem('prept_shopping_checks_v2', JSON.stringify(checkedItems));
+        }, [checkedItems]);
+
+
+        const toggleCheck = (nameKey) => {
+            setCheckedItems(prev => ({
+                ...prev,
+                [nameKey]: !prev[nameKey],
+            }));
+        };
+
+        const clearChecks = () => {
+            setCheckedItems({});
+            setSystemMessage({ type: 'info', text: 'Shopping list checkmarks cleared.' });
+        };
+
+        if (shoppingList.length === 0) {
+            return (
+                <div className="text-center p-12 md:p-16 border-2 border-dashed border-gray-300 rounded-xl bg-white app-shadow m-8">
+                    <ListChecks className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-lg font-medium text-gray-600">No Meals Planned!</p>
+                    <p className="text-gray-500">Go to the 'Plan' tab to schedule your recipes and generate your list here.</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="p-4 md:p-8 max-w-3xl mx-auto">
+                <h2 className="text-3xl font-extrabold text-gray-900 mb-6 flex justify-between items-center">
+                    Weekly Shopping List
+                    <button
+                        onClick={clearChecks}
+                        className="text-sm text-accent hover:text-accent font-medium transition flex items-center"
+                    >
+                        <Trash2 className="w-4 h-4 mr-1" /> Clear Checkmarks
+                    </button>
+                </h2>
+                <div className="bg-white rounded-xl shadow-2xl overflow-hidden divide-y divide-gray-100 app-shadow">
+                    {shoppingList.map((item, index) => {
+                        const isChecked = checkedItems[item.name.toLowerCase()];
+                        return (
+                            <div
+                                key={index}
+                                onClick={() => toggleCheck(item.name.toLowerCase())}
+                                className={`p-4 flex justify-between items-center cursor-pointer transition ${isChecked ? 'bg-primary/5 opacity-70' : 'hover:bg-gray-50'}`}
+                            >
+                                <div className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        readOnly
+                                        className="form-checkbox h-5 w-5 text-primary rounded border-gray-300 mr-4"
+                                        style={{ color: '#64B687' }} /* Explicit color for checkbox */
+                                    />
+                                    <span className={`text-lg font-medium text-gray-800 ${isChecked ? 'line-through text-gray-500' : ''}`}>
+                                        {item.name}
+                                    </span>
+                                </div>
+                                <span className={`text-sm text-gray-600 ${isChecked ? 'line-through text-gray-400' : 'font-semibold'}`}>
+                                    {item.quantities}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+                <p className="text-center text-sm text-gray-500 mt-6">Quantities are unique entries aggregated from all planned meals.</p>
+            </div>
+        );
+    };
+
+
+    // --- MAIN APP RENDER ---
+    const renderContent = () => {
+        switch (activeView) {
+            case 'plan':
+                return <WeeklyPlanView />;
+            case 'recipes':
+                return <RecipeBookView />;
+            case 'list':
+                return <ShoppingListView />;
+            default:
+                return <WeeklyPlanView />;
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-app-bg font-sans antialiased flex flex-col">
+            {/* Header/Navigation (US 1.3) */}
+            <header className="bg-white shadow-md sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                        {/* New Logo Icon */}
+                        <PreptLogoIcon className="w-8 h-8 text-primary" />
+                        <h1 className="text-2xl font-black text-primary">prept</h1>
+                    </div>
+                    <nav className="flex space-x-2 md:space-x-4">
+                        <NavButton icon={Calendar} label="Plan" view="plan" activeView={activeView} setActiveView={setActiveView} />
+                        <NavButton icon={PreptLogoIcon} label="Recipes" view="recipes" activeView={activeView} setActiveView={setActiveView} />
+                        <NavButton icon={ListChecks} label="List" view="list" activeView={activeView} setActiveView={setActiveView} />
+                    </nav>
+                </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-grow max-w-7xl mx-auto w-full">
+                {renderContent()}
+            </main>
+
+            {/* System Message Bar */}
+            {systemMessage.text && (
+                <div className={`fixed bottom-0 left-0 right-0 p-4 text-center text-sm font-medium transition-all duration-500 ease-in-out z-50 ${systemMessage.type === 'error' ? 'bg-accent text-white' : systemMessage.type === 'success' ? 'bg-primary text-white' : 'bg-gray-700 text-white'}`}>
+                    {systemMessage.text}
+                </div>
+            )}
+
+            {/* Modals */}
+            <AddRecipeModal
+                isOpen={isAddModalOpen}
+                onClose={closeAddModal}
+                initialRecipe={editRecipe}
+            />
+
+            {/* Footer for Local Storage Info */}
+            <footer className="w-full py-3 text-center text-xs text-gray-500 border-t bg-white">
+                Data is stored locally in your browser. No login or internet connection required for data access.
+            </footer>
+        </div>
+    );
+};
+
+// Nav Button Helper Component
+const NavButton = ({ icon: Icon, label, view, activeView, setActiveView }) => (
+    <button
+        onClick={() => setActiveView(view)}
+        className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm font-medium ${activeView === view
+            ? 'bg-primary text-white shadow-md'
+            : 'text-gray-600 hover:bg-gray-100'
+            }`}
+    >
+        <Icon className="w-5 h-5 mr-1" fill={activeView === view ? 'currentColor' : 'none'} />
+        {label}
+    </button>
+);
+
+
+// Renders the App component into the 'root' div.
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(<App />);
+
+    </script>
+</body>
+</html>
