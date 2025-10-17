@@ -487,7 +487,7 @@ const App = () => {
 
     // About modal shown when clicking the logo
     const AboutModal = ({ isOpen, onClose }) => {
-        const aboutText = `Prept helps you plan your week, manage recipes, and generate a consolidated shopping list.\n\nCreate or import recipes, schedule them across the week, and export or check off items when shopping.\n\nGenerate recipes from natural-language prompts or extract them from photos using OCR. AI features require an API key.`;
+        const aboutText = `Prept helps you plan your week, manage recipes, and generate a consolidated shopping list.\n\nCreate or import recipes, schedule them across the week, and export or check off items when shopping.\n\nGenerate recipes from natural-language prompts or extract them from photos using OCR.\n\n(AI features require an API key)`;
         return (
             // use a slightly different grid so the right column has more room; remove large logo and shrink typography
             <Modal isOpen={isOpen} onClose={onClose} title={null} large={true}>
