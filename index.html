@@ -811,8 +811,8 @@ const App = () => {
                         )}
                     </div>
                 </Modal>
-            );
-        };
+            );   // <-- add this closing parenthesis for the return
+        };      // <-- end of RecipeSelectorModal
 
         return (
             <div className="p-4 md:p-8">
@@ -960,33 +960,46 @@ const App = () => {
     // US 4.1, 4.2: Shopping List View
     const ShoppingListView = () => {
         const [checkedItems, setCheckedItems] = useState(() => {
-            // Initialize from LocalStorage for persistence within the session
             try {
-                const storedChecks = localStorage.getItem('prept_shopping_checks_v2');
-                return storedChecks ? JSON.parse(storedChecks) : {};
-            } catch {
+                const stored = localStorage.getItem('prept_shopping_checks_v2');
+                return stored ? JSON.parse(stored) : {};
+            } catch (e) {
+                console.error('Failed to parse shopping checks from LocalStorage', e);
                 return {};
             }
         });
 
-        // US 4.1: Aggregated List (Memoized for performance)
-        const shoppingList = aggregateShoppingList;
+        const shoppingList = Array.isArray(aggregateShoppingList) ? aggregateShoppingList : [];
 
-        // Persist check state to LocalStorage (US 4.2)
+        // Single source of truth for persistence
         useEffect(() => {
-            localStorage.setItem('prept_shopping_checks_v2', JSON.stringify(checkedItems));
+            try {
+                localStorage.setItem('prept_shopping_checks_v2', JSON.stringify(checkedItems));
+            } catch (e) {
+                console.error('Failed to persist shopping checks to LocalStorage', e);
+            }
         }, [checkedItems]);
 
-
-        const toggleCheck = (nameKey) => {
-            setCheckedItems(prev => ({
-                ...prev,
-                [nameKey]: !prev[nameKey],
-            }));
+        const toggleCheck = (name) => {
+            const key = String(name || '').trim().toLowerCase();
+            setCheckedItems(prev => {
+                const next = { ...prev };
+                if (next[key]) {
+                    delete next[key];
+                } else {
+                    next[key] = true;
+                }
+                return next;
+            });
         };
 
         const clearChecks = () => {
             setCheckedItems({});
+            try {
+                localStorage.removeItem('prept_shopping_checks_v2');
+            } catch (e) {
+                console.error('Failed to remove shopping checks from LocalStorage', e);
+            }
             setSystemMessage({ type: 'info', text: 'Shopping list checkmarks cleared.' });
         };
 
@@ -1011,13 +1024,15 @@ const App = () => {
                         <Trash2 className="w-4 h-4 mr-1" /> Clear Checkmarks
                     </button>
                 </h2>
+
                 <div className="bg-white rounded-xl shadow-2xl overflow-hidden divide-y divide-gray-100 app-shadow">
-                    {shoppingList.map((item, index) => {
-                        const isChecked = checkedItems[item.name.toLowerCase()];
+                    {shoppingList.map((item, idx) => {
+                        const key = String(item.name || '').trim().toLowerCase();
+                        const isChecked = !!checkedItems[key];
                         return (
                             <div
-                                key={index}
-                                onClick={() => toggleCheck(item.name.toLowerCase())}
+                                key={idx}
+                                onClick={() => toggleCheck(item.name)}
                                 className={`p-4 flex justify-between items-center cursor-pointer transition ${isChecked ? 'bg-primary/5 opacity-70' : 'hover:bg-gray-50'}`}
                             >
                                 <div className="flex items-center">
@@ -1026,7 +1041,7 @@ const App = () => {
                                         checked={isChecked}
                                         readOnly
                                         className="form-checkbox h-5 w-5 text-primary rounded border-gray-300 mr-4"
-                                        style={{ color: '#64B687' }} /* Explicit color for checkbox */
+                                        style={{ color: '#64B687' }}
                                     />
                                     <span className={`text-lg font-medium text-gray-800 ${isChecked ? 'line-through text-gray-500' : ''}`}>
                                         {item.name}
@@ -1039,6 +1054,7 @@ const App = () => {
                         );
                     })}
                 </div>
+
                 <p className="text-center text-sm text-gray-500 mt-6">Quantities are unique entries aggregated from all planned meals.</p>
             </div>
         );
