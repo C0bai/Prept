@@ -479,11 +479,30 @@ const App = () => {
         <Modal isOpen={isOpen} onClose={onClose} title="About prept" large={false}>
             <div className="space-y-4">
                 <p className="text-gray-700">
-                    prept is an AI-enhanced weekly meal planner that helps you create, store, and schedule recipes.
-                    Generate recipes using text prompts or OCR images, plan meals across the week, and build a consolidated shopping list.
+                    prept is an AI-enhanced weekly meal planner.
                 </p>
-                <p className="text-sm text-gray-500">Local-first: your data is stored in your browser's LocalStorage.</p>
-                <p className="text-sm text-gray-500">Version: 0.9 (local preview)</p>
+                <p className="text-gray-700">
+                    Create, store, and schedule recipes.
+                </p>
+                <p className="text-gray-700">
+                    Generate recipes from natural-language prompts or extract them from photos using OCR.
+                </p>
+                <p className="text-gray-700">
+                    Build a consolidated shopping list aggregated from your planned meals.
+                </p>
+
+                <ul className="list-disc list-inside text-gray-700">
+                    <li>Local-first: your data is stored in your browser. No account required.</li>
+                    <li>AI generation: text prompts & image OCR (requires API key).</li>
+                    <li>Quick weekly planning with easy assignment and clear-all actions.</li>
+                    <li>Shopping list aggregation with persistent checkmarks.</li>
+                </ul>
+
+                <div className="text-sm text-gray-500">
+                    <p>Developer: Cobai</p>
+                    <p>Version: 0.9 (local preview)</p>
+                </div>
+
                 <div className="flex justify-end pt-2">
                     <button onClick={onClose} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">Close</button>
                 </div>
