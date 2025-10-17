@@ -480,15 +480,16 @@ const App = () => {
         return (
             // pass no title to remove the modal header text
             <Modal isOpen={isOpen} onClose={onClose} title={null} large={false}>
-                <div className="bg-white rounded-lg p-4 sm:p-6 shadow-md">
+                <div className="bg-white rounded-lg p-4 sm:p-6 shadow-md max-w-full">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
-                        <div className="sm:col-span-2 space-y-4">
+                        <div className="sm:col-span-2 space-y-4 min-w-0">
                             <div className="flex items-center space-x-3">
                                 <PreptLogoIcon className="w-10 h-10 text-primary" />
-                                {/* removed the "prept" header to keep this panel clean */}
+                                {/* match main header logo text */}
+                                <h3 className="text-2xl font-black text-primary select-none">prept</h3>
                             </div>
 
-                            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                            <p className="text-gray-700 leading-relaxed whitespace-pre-line break-words">
                                 {aboutText}
                             </p>
 
@@ -499,27 +500,27 @@ const App = () => {
                             </div>
                         </div>
 
-                        <div className="sm:col-span-1 bg-gray-50 p-4 rounded-lg border border-gray-100 min-w-0">
-                            <div className="space-y-3 text-sm text-gray-700">
+                        <div className="sm:col-span-1 bg-gray-50 p-4 rounded-lg border border-gray-100 min-w-0 flex flex-col">
+                            <div className="space-y-3 text-sm text-gray-700 flex-1">
                                 <div className="flex justify-between">
                                     <span className="font-semibold text-gray-900 whitespace-nowrap">Developer</span>
-                                    <span className="text-gray-600 ml-4 truncate">Cobai</span>
+                                    <span className="text-gray-600 ml-4 whitespace-normal">Cobai</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="font-semibold text-gray-900 whitespace-nowrap">Version</span>
-                                    <span className="text-gray-600 ml-4 truncate">0.9 (local preview)</span>
+                                    <span className="text-gray-600 ml-4 whitespace-normal">0.9 (local preview)</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="font-semibold text-gray-900 whitespace-nowrap">Data</span>
-                                    <span className="text-gray-600 ml-4 truncate">Stored locally in your browser</span>
+                                    <span className="text-gray-600 ml-4 whitespace-normal">Stored locally in your browser</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="font-semibold text-gray-900 whitespace-nowrap">AI</span>
-                                    <span className="text-gray-600 ml-4 truncate">Text prompts & OCR (API key required)</span>
+                                    <span className="text-gray-600 ml-4 whitespace-normal">Text prompts & OCR (API key required)</span>
                                 </div>
                             </div>
 
-                            <div className="mt-4">
+                            <div className="mt-4 pt-3">
                                 <button onClick={onClose} className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">Close</button>
                             </div>
                         </div>
