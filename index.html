@@ -461,7 +461,7 @@ const App = () => {
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10 flex justify-between items-center">
-                        <h3 className="text-2xl font-extrabold text-gray-800">{title}</h3>
+                        {title ? <h3 className="text-2xl font-extrabold text-gray-800">{title}</h3> : null}
                         <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition">
                             <X className="w-6 h-6 text-gray-500" />
                         </button>
@@ -478,13 +478,14 @@ const App = () => {
     const AboutModal = ({ isOpen, onClose }) => {
         const aboutText = `prept helps you plan your week, manage recipes, and generate a consolidated shopping list.\n\nCreate or import recipes, schedule them across the week, and export or check off items when shopping.\n\nGenerate recipes from natural-language prompts or extract them from photos using OCR. AI features require an API key.`;
         return (
-            <Modal isOpen={isOpen} onClose={onClose} title="About prept" large={false}>
+            // pass no title to remove the modal header text
+            <Modal isOpen={isOpen} onClose={onClose} title={null} large={false}>
                 <div className="bg-white rounded-lg p-4 sm:p-6 shadow-md">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
                         <div className="sm:col-span-2 space-y-4">
                             <div className="flex items-center space-x-3">
                                 <PreptLogoIcon className="w-10 h-10 text-primary" />
-                                <h3 className="text-2xl font-extrabold text-primary">prept</h3>
+                                {/* removed the "prept" header to keep this panel clean */}
                             </div>
 
                             <p className="text-gray-700 leading-relaxed whitespace-pre-line">
@@ -498,23 +499,23 @@ const App = () => {
                             </div>
                         </div>
 
-                        <div className="sm:col-span-1 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <div className="sm:col-span-1 bg-gray-50 p-4 rounded-lg border border-gray-100 min-w-0">
                             <div className="space-y-3 text-sm text-gray-700">
                                 <div className="flex justify-between">
                                     <span className="font-semibold text-gray-900 whitespace-nowrap">Developer</span>
-                                    <span className="text-gray-600 ml-4">Cobai</span>
+                                    <span className="text-gray-600 ml-4 truncate">Cobai</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="font-semibold text-gray-900 whitespace-nowrap">Version</span>
-                                    <span className="text-gray-600 ml-4">0.9 (local preview)</span>
+                                    <span className="text-gray-600 ml-4 truncate">0.9 (local preview)</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="font-semibold text-gray-900 whitespace-nowrap">Data</span>
-                                    <span className="text-gray-600 ml-4">Stored locally in your browser</span>
+                                    <span className="text-gray-600 ml-4 truncate">Stored locally in your browser</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="font-semibold text-gray-900 whitespace-nowrap">AI</span>
-                                    <span className="text-gray-600 ml-4">Text prompts & OCR (API key required)</span>
+                                    <span className="text-gray-600 ml-4 truncate">Text prompts & OCR (API key required)</span>
                                 </div>
                             </div>
 
