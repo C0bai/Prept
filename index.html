@@ -194,6 +194,16 @@ const withRetry = async (fn, retries = 3) => {
     }
 };
 
+// --- ADD: Fisher-Yates shuffle utility (used by randomizer) ---
+const shuffleArray = (arr) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+};
+
 /**
  * Converts a File object to a Base64 string for the Gemini API.
  */
@@ -343,6 +353,71 @@ const App = () => {
         }
     }, [setWeeklyPlan, getInitialPlan]);
 
+
+    // --- ADD: Meal-type-aware randomizer (no duplicates across the week) ---
+    const randomizeWeeklyPlan = useCallback(() => {
+        // We want to fill each meal slot (one per day per meal) with a unique recipe,
+        // and ensure the recipe is tagged for the correct meal type.
+        const slotsPerMeal = DAYS.length; // e.g. 7
+        const mealShortages = [];
+        const usedIds = new Set();
+        const newPlan = {};
+
+        // Prepare per-meal candidate lists (shuffled)
+        const candidatesByMeal = MEALS.reduce((acc, meal) => {
+            const mealNorm = String(meal).toLowerCase();
+            const cands = shuffleArray(recipes.filter(r =>
+                Array.isArray(r.mealTypes) &&
+                r.mealTypes.some(mt => String(mt).toLowerCase() === mealNorm)
+            ).map(r => r.id));
+            acc[meal] = cands;
+            return acc;
+        }, {});
+
+        // Check availability (accounting for uniqueness across meals)
+        for (const meal of MEALS) {
+            // Filter out candidates already planned for previous meals to avoid duplicates
+            const available = candidatesByMeal[meal].filter(id => !usedIds.has(id));
+            if (available.length < slotsPerMeal) {
+                mealShortages.push({
+                    meal,
+                    have: available.length,
+                    need: slotsPerMeal
+                });
+            } else {
+                // Reserve the first N unique IDs for this meal
+                candidatesByMeal[meal] = available.slice(0, slotsPerMeal);
+                // Mark reserved IDs as used
+                candidatesByMeal[meal].forEach(id => usedIds.add(id));
+            }
+        }
+
+        if (mealShortages.length > 0) {
+            // Build a helpful error message
+            const parts = mealShortages.map(s => `${s.meal} (need ${s.need}, have ${s.have})`);
+            setSystemMessage({
+                type: 'error',
+                text: `Not enough recipes to randomize by meal type: ${parts.join(', ')}.`
+            });
+            return;
+        }
+
+        // At this point each meal has exactly slotsPerMeal unique recipe ids reserved.
+        // Assign them to days in order.
+        DAYS.forEach((day, dayIdx) => {
+            const dayKey = day.toLowerCase();
+            newPlan[dayKey] = {};
+            MEALS.forEach((meal) => {
+                const mealKey = meal.toLowerCase();
+                // Pull the id for this meal at index dayIdx
+                const idForSlot = candidatesByMeal[meal][dayIdx];
+                newPlan[dayKey][mealKey] = idForSlot || null;
+            });
+        });
+
+        setWeeklyPlan(newPlan);
+        setSystemMessage({ type: 'success', text: 'Weekly plan randomized by meal type (no duplicates).' });
+    }, [recipes, setWeeklyPlan, setSystemMessage]);
 
     // --- Shopping List Aggregation (Phase 4 Logic) ---
 
@@ -612,7 +687,7 @@ const App = () => {
                 ingredients: initialRecipe.ingredients.map(ing => ({
                     name: ing.name || '',
                     quantity: ing.quantity || '',
-                    id: generateUniqueId(), // FIX: Use fallback utility
+                    id: generateUniqueId() // FIX: Use fallback utility
                 })),
                 mealTypes: initialRecipe.mealTypes || []
             });
@@ -1056,13 +1131,23 @@ const App = () => {
                 <div className="p-4 md:p-8 mobile-page-padding">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-extrabold text-gray-900">Weekly Meal Plan</h2>
-                        <button
-                            onClick={clearAllMealSlots}
-                            className="flex items-center text-sm font-semibold text-accent hover:bg-accent/10 transition p-2 rounded-lg"
-                            disabled={Object.values(weeklyPlan).every(day => Object.values(day).every(meal => meal === null))}
-                        >
-                            <Trash2 className="w-5 h-5 mr-1" /> Clear All
-                        </button>
+                        <div className="flex items-center space-x-2">
+                            <button
+                                onClick={randomizeWeeklyPlan}
+                                className="flex items-center text-sm font-semibold bg-primary text-white px-3 py-2 rounded-lg hover:bg-primary-dark transition"
+                                title="Randomize week by meal type (no duplicates)"
+                            >
+                                <Zap className="w-4 h-4 mr-2" /> Randomize
+                            </button>
+
+                            <button
+                                onClick={clearAllMealSlots}
+                                className="flex items-center text-sm font-semibold text-accent hover:bg-accent/10 transition p-2 rounded-lg"
+                                disabled={Object.values(weeklyPlan).every(day => Object.values(day).every(meal => meal === null))}
+                            >
+                                <Trash2 className="w-5 h-5 mr-1" /> Clear All
+                            </button>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
@@ -1104,13 +1189,23 @@ const App = () => {
             <div className="p-4 md:p-8">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-extrabold text-gray-900">Weekly Meal Plan</h2>
-                    <button
-                        onClick={clearAllMealSlots}
-                        className="flex items-center text-sm font-semibold text-accent hover:bg-accent/10 transition p-2 rounded-lg"
-                        disabled={Object.values(weeklyPlan).every(day => Object.values(day).every(meal => meal === null))}
-                    >
-                        <Trash2 className="w-5 h-5 mr-1" /> Clear All Meals
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={randomizeWeeklyPlan}
+                            className="py-2 px-4 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition flex items-center"
+                            title="Randomize week by meal type (no duplicates)"
+                        >
+                            <Zap className="w-4 h-4 mr-2" /> Randomize Week
+                        </button>
+
+                        <button
+                            onClick={clearAllMealSlots}
+                            className="flex items-center text-sm font-semibold text-accent hover:bg-accent/10 transition p-2 rounded-lg"
+                            disabled={Object.values(weeklyPlan).every(day => Object.values(day).every(meal => meal === null))}
+                        >
+                            <Trash2 className="w-5 h-5 mr-1" /> Clear All Meals
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="overflow-x-auto app-shadow rounded-xl">
