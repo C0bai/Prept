@@ -125,8 +125,9 @@ const LOCAL_STORAGE_KEYS = {
     WEEKLY_PLAN: 'prept_weekly_plan_v2',
 };
 
-const API_KEY = "AIzaSyDFlGz6KBhcIlnxK7Lvy3veLZM677IC420"; 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=' + API_KEY;
+// NOTE: Removed embedded API key. Users provide their own key via the app settings.
+// Helper to build the Gemini URL at call-time (requires user-provided key).
+const getGeminiUrl = (key) => `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${encodeURIComponent(key)}`;
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const MEALS = ['Breakfast', 'Lunch', 'Dinner'];
@@ -199,7 +200,7 @@ const shuffleArray = (arr) => {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+        [a[i], a[j] ] = [a[j], a[i]];
     }
     return a;
 };
@@ -279,6 +280,12 @@ const App = () => {
 
     // Theme (dark / light) persisted in LocalStorage
     const [theme, setTheme] = useLocalStorageState('prept_theme', (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+
+    // NEW: persisted Gemini API key (user-provided)
+    const [apiKey, setApiKey] = useLocalStorageState('prept_gemini_api_key', '');
+
+    // Modal state for entering the API key
+    const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
     // Apply theme class to document root/body
     useEffect(() => {
@@ -457,9 +464,9 @@ const App = () => {
         setSystemMessage({ type: 'info', text: `Generating recipe from ${mode}...` });
         
         // Check if API key is present for AI functionality
-        if (!API_KEY) {
+        if (!apiKey) {
             setIsLoading(false);
-            setSystemMessage({ type: 'error', text: "API Key is missing. AI generation is disabled." });
+            setSystemMessage({ type: 'error', text: "No Gemini API key found. Click the banner to add your own key to enable AI features." });
             console.error("Gemini API Key is not set.");
             return;
         }
@@ -477,7 +484,9 @@ const App = () => {
                 },
             };
 
-            const response = await withRetry(() => fetch(GEMINI_API_URL, {
+            const geminiUrl = getGeminiUrl(apiKey);
+
+            const response = await withRetry(() => fetch(geminiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(apiPayload)
@@ -499,9 +508,9 @@ const App = () => {
 
             // US 5.6: Switch to Manual Entry form and pre-fill
             setEditRecipe({
-                id: null, // New recipe marker
+                id: null,
                 name: parsedRecipe.recipeName || '',
-                description: '', // AI doesn't typically provide this field, so keep it empty
+                description: '',
                 servings: parsedRecipe.servings || '',
                 prepTime: parsedRecipe.prepTime || '',
                 instructions: parsedRecipe.instructions || '',
@@ -516,7 +525,7 @@ const App = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [setEditRecipe]);
+    }, [setEditRecipe, setIsAddModalOpen, apiKey]); // ensure apiKey included in deps
 
     // US 5.3: Handle AI Text Submit
     const handleAITextSubmit = useCallback(async (prompt) => {
@@ -791,7 +800,7 @@ const App = () => {
                 {isLoading ? <Loader2 className="w-5 h-5 mr-2" /> : <Zap className="w-5 h-5 mr-2" />}
                 Generate Recipe
             </button>
-            {!API_KEY && <p className="text-red-500 text-sm mt-2">AI features require an API key to be set.</p>}
+            {!apiKey && <p className="text-red-500 text-sm mt-2">To use AI features, add your own Gemini API key from https://aistudio.google.com.</p>}
         </div>
     );
 
@@ -858,7 +867,7 @@ const App = () => {
                     </div>
                 </div>
             )}
-            {!API_KEY && <p className="text-red-500 text-sm mt-2">AI features require an API key to be set.</p>}
+            {!apiKey && <p className="text-red-500 text-sm mt-2">To use AI features, add your own Gemini API key from https://aistudio.google.com.</p>}
         </div>
     );
 
@@ -994,6 +1003,19 @@ const App = () => {
 
         return (
             <Modal isOpen={isOpen} onClose={onClose} title={initialRecipe?.id ? 'Edit Recipe' : 'Add New Recipe'} large={true}>
+                {/* Show API-key hint and Add Key button only on the Add/Edit Recipe modal */}
+                {!apiKey && (
+                    <div className="mb-4 rounded-md bg-yellow-50 border-l-4 border-yellow-400 p-3 text-yellow-700 flex items-start justify-between">
+                        <div>
+                            <strong className="block">AI features require a Gemini API key</strong>
+                            <div className="text-sm">Get a key at <a className="underline" href="https://aistudio.google.com" target="_blank" rel="noreferrer">https://aistudio.google.com</a></div>
+                        </div>
+                        <div className="flex items-center">
+                            <button onClick={() => setIsApiKeyModalOpen(true)} className="px-3 py-1 bg-yellow-400 text-white rounded-md">Add Key</button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex space-x-2 border-b mb-6">
                     <TabButton currentMode="manual" label="Manual Entry" icon={<PenTool className="w-4 h-4" />} />
                     <TabButton currentMode="ai_text" label="AI Text Generator" icon={<Zap className="w-4 h-4" />} />
@@ -1012,6 +1034,24 @@ const App = () => {
                 {mode === 'manual' && manualTab}
                 {mode === 'ai_text' && aiTextTab}
                 {mode === 'ai_image' && aiImageTab}
+
+                {/* Api Key Modal (local-only; opened from the Add/Edit Recipe modal) */}
+                <Modal isOpen={isApiKeyModalOpen} onClose={() => setIsApiKeyModalOpen(false)} title="Enter Gemini API Key">
+                    <div className="space-y-4">
+                        <p className="text-sm text-gray-600">Paste your Gemini API key below. This is stored locally in your browser.</p>
+                        <input
+                            type="text"
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            placeholder="Enter API key"
+                            className="w-full p-2 border border-gray-300 rounded-lg"
+                        />
+                        <div className="flex justify-end space-x-2">
+                            <button onClick={() => { setApiKey(''); setIsApiKeyModalOpen(false); }} className="px-4 py-2 bg-gray-100 rounded-lg">Remove Key</button>
+                            <button onClick={() => setIsApiKeyModalOpen(false)} className="px-4 py-2 bg-primary text-white rounded-lg">Save</button>
+                        </div>
+                    </div>
+                </Modal>
             </Modal>
         );
     };
@@ -1484,12 +1524,14 @@ const App = () => {
                             aria-label="Toggle theme"
                             title="Toggle dark / light"
                         >
-                            <ThemeToggle className="w-5 h-5 mr-1" fill={theme === 'dark' ? 'currentColor' : 'none'} />
+                            <ThemeToggle className="w-5 h-5 mr-1" fill={ theme === 'dark' ? 'currentColor' : 'none'} />
                             <span className="hidden sm:inline">{theme === 'dark' ? 'Dark' : 'Light'}</span>
                         </button>
                     </div>
                 </div>
             </header>
+
+            {/* (API key UI moved to Add/Edit Recipe modal so non-AI users don't see a global banner) */}
 
             {/* Main Content */}
             <main className="flex-grow max-w-7xl mx-auto w-full">
