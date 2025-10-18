@@ -45,6 +45,20 @@
             /* ensure content has comfortable margins on small screens */
             .mobile-page-padding { padding-left: 1rem; padding-right: 1rem; }
         }
+
+        /* DARK MODE OVERRIDES (targeted, small set) */
+        body.dark { background-color: #071026; color: #E6EEF8; }
+        body.dark .bg-app-bg { background-color: #071026 !important; }
+        body.dark .bg-white { background-color: #071026 !important; }
+        body.dark .bg-gray-50 { background-color: #071026 !important; }
+        body.dark .bg-gray-100 { background-color: #0b1524 !important; }
+        body.dark .text-gray-900, body.dark .text-gray-800 { color: #E6EEF8 !important; }
+        body.dark .text-gray-700, body.dark .text-gray-600, body.dark .text-gray-500 { color: #9FB4CC !important; }
+        body.dark .border-gray-200, body.dark .border-gray-100, body.dark .border-gray-300 { border-color: #1b2b3b !important; }
+        body.dark .app-shadow { box-shadow: 0 10px 20px rgba(2,6,23,0.6); }
+        body.dark input, body.dark textarea { background-color: #071026; color: #E6EEF8; border-color: #173245 !important; }
+        body.dark .text-primary { color: #64B687 !important; }
+        body.dark .bg-primary { background-color: #2b5b48 !important; }
     </style>
 </head>
 <body>
@@ -86,6 +100,21 @@ const Check = (props) => <PlaceholderIcon {...props} title="Check"><polyline poi
 const Search = (props) => <PlaceholderIcon {...props} title="Search"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></PlaceholderIcon>;
 const AlertTriangle = (props) => <PlaceholderIcon {...props} title="Alert Triangle"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h18.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></PlaceholderIcon>;
 const PenTool = (props) => <PlaceholderIcon {...props} title="Pen Tool"><path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-4-4"/></PlaceholderIcon>;
+
+// ---- new: theme toggle placeholder icon (sun/moon hybrid) ----
+const ThemeToggle = (props) => {
+    return (
+        <PlaceholderIcon {...props} title="Theme Toggle" w={20} h={20}>
+            {/* sun rays */}
+            <g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v1.5M12 20.5V22M4.2 4.2l1.05 1.05M18.75 18.75l1.05 1.05M2 12h1.5M20.5 12H22M4.2 19.8l1.05-1.05M18.75 5.25l1.05-1.05" />
+            </g>
+            {/* crescent mask to suggest moon (fills when using currentColor) */}
+            <path d="M16 12.5A4.5 4.5 0 1 1 11.5 8 3.5 3.5 0 0 0 16 12.5z" fill="currentColor" opacity="0.08" />
+        </PlaceholderIcon>
+    );
+};
 
 // --- START OF APP LOGIC ---
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
@@ -237,6 +266,17 @@ const App = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [systemMessage, setSystemMessage] = useState({ type: '', text: '' }); // 'success', 'error', 'info'
     const [isAboutOpen, setIsAboutOpen] = useState(false);
+
+    // Theme (dark / light) persisted in LocalStorage
+    const [theme, setTheme] = useLocalStorageState('prept_theme', (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+
+    // Apply theme class to document root/body
+    useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+            document.body.classList.toggle('dark', theme === 'dark');
+        }
+    }, [theme]);
 
     // --- Data Management Functions (Phase 2 & 3 Logic) ---
 
@@ -1265,11 +1305,25 @@ const App = () => {
                         {/* About modal instance */}
                         <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
                     </div>
-                    <nav className="flex space-x-2 md:space-x-4">
-                        <NavButton icon={Calendar} label="Plan" view="plan" activeView={activeView} setActiveView={setActiveView} />
-                        <NavButton icon={PreptLogoIcon} label="Recipes" view="recipes" activeView={activeView} setActiveView={setActiveView} />
-                        <NavButton icon={ListChecks} label="List" view="list" activeView={activeView} setActiveView={setActiveView} />
-                    </nav>
+                    <div className="flex items-center space-x-2 md:space-x-4">
+                        <nav className="flex space-x-2 md:space-x-4">
+                            <NavButton icon={Calendar} label="Plan" view="plan" activeView={activeView} setActiveView={setActiveView} />
+                            <NavButton icon={PreptLogoIcon} label="Recipes" view="recipes" activeView={activeView} setActiveView={setActiveView} />
+                            <NavButton icon={ListChecks} label="List" view="list" activeView={activeView} setActiveView={setActiveView} />
+                        </nav>
+
+                        {/* theme toggle as placeholder icon to match other menu items */}
+                        <button
+                            onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                            className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm font-medium ${theme === 'dark' ? 'bg-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+                            aria-pressed={theme === 'dark'}
+                            aria-label="Toggle theme"
+                            title="Toggle dark / light"
+                        >
+                            <ThemeToggle className="w-5 h-5 mr-1" fill={theme === 'dark' ? 'currentColor' : 'none'} />
+                            <span className="hidden sm:inline">{theme === 'dark' ? 'Dark' : 'Light'}</span>
+                        </button>
+                    </div>
                 </div>
             </header>
 
