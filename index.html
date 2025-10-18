@@ -354,69 +354,66 @@ const App = () => {
     }, [setWeeklyPlan, getInitialPlan]);
 
 
-    // --- ADD: Meal-type-aware randomizer (no duplicates across the week) ---
+    // --- UPDATED: Meal-type-aware randomizer (fills as many slots as possible, no duplicates) ---
     const randomizeWeeklyPlan = useCallback(() => {
-        // We want to fill each meal slot (one per day per meal) with a unique recipe,
-        // and ensure the recipe is tagged for the correct meal type.
-        const slotsPerMeal = DAYS.length; // e.g. 7
-        const mealShortages = [];
+        const slotsPerMeal = DAYS.length; // 7
+        const candidatesByMeal = {};
+        // build shuffled candidate lists per meal (case-insensitive)
+        MEALS.forEach(meal => {
+            const mealNorm = meal.toLowerCase();
+            candidatesByMeal[meal] = shuffleArray(
+                recipes
+                    .filter(r => Array.isArray(r.mealTypes) && r.mealTypes.some(mt => String(mt).toLowerCase() === mealNorm))
+                    .map(r => r.id)
+            );
+        });
+
+        const pointers = MEALS.reduce((acc, m) => { acc[m] = 0; return acc; }, {});
+        const assignedCounts = MEALS.reduce((acc, m) => { acc[m] = 0; return acc; }, {});
         const usedIds = new Set();
         const newPlan = {};
 
-        // Prepare per-meal candidate lists (shuffled)
-        const candidatesByMeal = MEALS.reduce((acc, meal) => {
-            const mealNorm = String(meal).toLowerCase();
-            const cands = shuffleArray(recipes.filter(r =>
-                Array.isArray(r.mealTypes) &&
-                r.mealTypes.some(mt => String(mt).toLowerCase() === mealNorm)
-            ).map(r => r.id));
-            acc[meal] = cands;
-            return acc;
-        }, {});
-
-        // Check availability (accounting for uniqueness across meals)
-        for (const meal of MEALS) {
-            // Filter out candidates already planned for previous meals to avoid duplicates
-            const available = candidatesByMeal[meal].filter(id => !usedIds.has(id));
-            if (available.length < slotsPerMeal) {
-                mealShortages.push({
-                    meal,
-                    have: available.length,
-                    need: slotsPerMeal
-                });
-            } else {
-                // Reserve the first N unique IDs for this meal
-                candidatesByMeal[meal] = available.slice(0, slotsPerMeal);
-                // Mark reserved IDs as used
-                candidatesByMeal[meal].forEach(id => usedIds.add(id));
-            }
-        }
-
-        if (mealShortages.length > 0) {
-            // Build a helpful error message
-            const parts = mealShortages.map(s => `${s.meal} (need ${s.need}, have ${s.have})`);
-            setSystemMessage({
-                type: 'error',
-                text: `Not enough recipes to randomize by meal type: ${parts.join(', ')}.`
-            });
-            return;
-        }
-
-        // At this point each meal has exactly slotsPerMeal unique recipe ids reserved.
-        // Assign them to days in order.
-        DAYS.forEach((day, dayIdx) => {
+        // Fill day-by-day, meal-by-meal, picking the next unused candidate for that meal.
+        DAYS.forEach(day => {
             const dayKey = day.toLowerCase();
             newPlan[dayKey] = {};
-            MEALS.forEach((meal) => {
-                const mealKey = meal.toLowerCase();
-                // Pull the id for this meal at index dayIdx
-                const idForSlot = candidatesByMeal[meal][dayIdx];
-                newPlan[dayKey][mealKey] = idForSlot || null;
+            MEALS.forEach(meal => {
+                const arr = candidatesByMeal[meal] || [];
+                let p = pointers[meal];
+                // advance pointer past any already-used ids
+                while (p < arr.length && usedIds.has(arr[p])) p++;
+                if (p < arr.length) {
+                    const idForSlot = arr[p];
+                    newPlan[dayKey][meal.toLowerCase()] = idForSlot;
+                    usedIds.add(idForSlot);
+                    assignedCounts[meal] += 1;
+                    pointers[meal] = p + 1;
+                } else {
+                    // no candidate left for this meal — leave null
+                    newPlan[dayKey][meal.toLowerCase()] = null;
+                    pointers[meal] = p;
+                }
             });
         });
 
+        // compute shortages per meal
+        const shortages = MEALS.map(m => {
+            const assigned = assignedCounts[m] || 0;
+            return { meal: m, have: assigned, need: Math.max(0, slotsPerMeal - assigned) };
+        }).filter(s => s.need > 0);
+
         setWeeklyPlan(newPlan);
-        setSystemMessage({ type: 'success', text: 'Weekly plan randomized by meal type (no duplicates).' });
+
+        if (shortages.length > 0) {
+            const totalNeeded = shortages.reduce((sum, s) => sum + s.need, 0);
+            const parts = shortages.map(s => `${s.meal} (need ${s.need})`);
+            setSystemMessage({
+                type: 'error',
+                text: `Week partially filled — need ${totalNeeded} more recipe${totalNeeded === 1 ? '' : 's'} to complete: ${parts.join(', ')}.`
+            });
+        } else {
+            setSystemMessage({ type: 'success', text: 'Weekly plan randomized by meal type (no duplicates).' });
+        }
     }, [recipes, setWeeklyPlan, setSystemMessage]);
 
     // --- Shopping List Aggregation (Phase 4 Logic) ---
