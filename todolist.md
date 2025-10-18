@@ -76,5 +76,6 @@ Related files/components
 - Grocery list export (CSV / print-friendly).
 - Recurring favorites: mark favorite recipes and prioritize them in randomizer.
 - Accessibility audit: keyboard navigation & ARIA labels for modals and controls.
+- Allow user specified API Key ✅
 
 ---
