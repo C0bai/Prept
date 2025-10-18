@@ -970,22 +970,51 @@ const App = () => {
 
         const RecipeSelectorModal = () => {
             const [searchTerm, setSearchTerm] = useState('');
-            const filteredRecipes = recipes.filter(r =>
-                r.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            const [showAll, setShowAll] = useState(false);
+
+            // Normalize the target meal (e.g. "Breakfast") for filtering
+            const targetMeal = selectedSlot.meal || null;
+            const targetMealNorm = targetMeal ? String(targetMeal).toLowerCase() : null;
+
+            const filteredRecipes = recipes
+                .filter(r =>
+                    r.name.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .filter(r => {
+                    if (showAll || !targetMealNorm) return true;
+                    if (!Array.isArray(r.mealTypes) || r.mealTypes.length === 0) return false;
+                    // case-insensitive match against recipe's mealTypes
+                    return r.mealTypes.some(mt => String(mt).toLowerCase() === targetMealNorm);
+                });
 
             return (
-                <Modal isOpen={isSelectorOpen} onClose={() => setIsSelectorOpen(false)} title={`Select Meal for ${selectedSlot.day} ${selectedSlot.meal}`}>
+                <Modal isOpen={isSelectorOpen} onClose={() => setIsSelectorOpen(false)} title={`Select Meal for ${selectedSlot.day || ''} ${selectedSlot.meal || ''}`}>
                     <input
                         type="text"
                         placeholder="Search recipes..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-lg mb-4 focus:ring-primary focus:border-primary"
+                        className="w-full p-2 border border-gray-300 rounded-lg mb-3 focus:ring-primary focus:border-primary"
                     />
 
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="text-sm text-gray-600">
+                            {targetMeal ? (
+                                <span>Filtering by: <strong className="text-primary">{targetMeal}</strong></span>
+                            ) : (
+                                <span>Showing all recipes</span>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={() => setShowAll(prev => !prev)}
+                            className={`text-sm px-3 py-1 rounded-lg border ${showAll ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-200'} hover:bg-gray-50 transition`}
+                        >
+                            {showAll ? 'Filter by meal' : 'Show all'}
+                        </button>
+                    </div>
+
                     <div className="space-y-2 max-h-80 overflow-y-auto">
-                        {/* US 3.3: Clear Slot */}
                         <button
                             onClick={() => handleSlotUpdate(null)}
                             className="w-full text-center py-3 bg-accent/10 text-accent font-bold rounded-lg hover:bg-accent/20 transition flex items-center justify-center"
@@ -993,6 +1022,7 @@ const App = () => {
                             <Trash2 className="w-5 h-5 mr-2" /> Clear Meal Slot
                         </button>
                         <hr className="my-2" />
+
                         {filteredRecipes.length > 0 ? (
                             filteredRecipes.map(recipe => (
                                 <button
@@ -1002,10 +1032,18 @@ const App = () => {
                                 >
                                     <p className="font-semibold text-primary leading-tight">{recipe.name}</p>
                                     <p className="text-sm text-gray-500">Servings: {recipe.servings || 'N/A'}</p>
+                                    {Array.isArray(recipe.mealTypes) && recipe.mealTypes.length > 0 && (
+                                        <p className="text-xs text-gray-400 mt-1">Tags: {recipe.mealTypes.join(', ')}</p>
+                                    )}
                                 </button>
                             ))
                         ) : (
-                            <p className="text-center text-gray-500 p-4">No recipes found. Try adding one!</p>
+                            <div className="p-4 text-center text-gray-500">
+                                {targetMeal && !showAll
+                                    ? <>No recipes tagged for <strong className="text-primary">{targetMeal}</strong>. <button onClick={() => setShowAll(true)} className="underline ml-1">Show all recipes</button></>
+                                    : 'No recipes found. Try adding one!'
+                                }
+                            </div>
                         )}
                     </div>
                 </Modal>
